@@ -41,6 +41,14 @@ permitan visualizar el funcionamiento de la curva ADSR.
 Para los cuatro casos, deberá incluir una gráfica en la que se visualice claramente la curva ADSR. Deberá
 añadir la información necesaria para su correcta interpretación, aunque esa información puede reducirse a
 colocar etiquetas y títulos adecuados en la propia gráfica (se valorará positivamente esta alternativa).
+### Envolvente ADSR (instrumento genérico)
+
+En `InstrumentDumb` y `Seno` usamos la misma envolvente ADSR para dar forma a cada nota: primero sube (Attack), luego baja un poco (Decay), se mantiene mientras dura la nota (Sustain) y al soltarla se va apagando (Release). En la figura se ve cómo esos tramos cambian la amplitud de la señal a lo largo del tiempo.
+
+![fm_freq_graph1](img/fm_freq_graph1.png)
+
+Figura: frecuencia instantánea en FM.
+
 
 ### Instrumentos Dumb y Seno.
 
