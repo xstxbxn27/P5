@@ -210,9 +210,9 @@ const vector<float> &Seno::synthesize()
 }
 ```
 
-Para generar la señal a partir de la tabla, recorremos sus valores con un índice que avanza según la frecuencia. Como ese índice suele caer entre dos posiciones, aplicamos interpolación lineal para estimar el valor intermedio y evitar “escalones” en la forma de onda.
+Tal y como podemos observar en el código, hemos añadido una interpolación lineal para los puntos que no se encuentran en la tabla. Con la interpolación hemos tenido la opción de decidir cómo tratamos el 'reseteo' del índice cuando se llega al final de la tabla.
 
-Al llegar al final de la tabla probamos dos formas de gestionar el índice. Si lo forzamos a 0, aparece una pequeña discontinuidad porque el valor 0 no coincide con la fase real de la sinusoide (se nota como un salto). La opción que mejor resultado nos da es “envolver” el índice y volver al valor equivalente dentro de la tabla (índice actual − N), manteniendo la continuidad de fase.
+En primer lugar, habíamos forzado que el índice (tomando valores decimales) fuese forzado a 0 cuando se saliera de la tabla. De este modo, aparece un pequeño desencaje en la sinusoide generada porque el valor 0 no es necesariamente la fase que le corresponde (en la gráfica se puede ver como uno de los escalones se repite). Luego, hemos optado resetear el índice con el valor correspondiente (índice actual - N), que posiblemente será 0 con algunos decimales. Esto permite que la fase avance y no se 'resetee' cada vez que termina de leer la tabla, lo cual produce resultados bastante diferentes en cuanto al sonido.
 
 ![Seno zoom](img/seno_graph1.png)
 
@@ -226,7 +226,7 @@ Las grabaciones de estos tres casos se han guardado en `work/ejemplos/`:
   e incluya una gráfica en la que se vean claramente (use pelotitas en lugar de líneas) los valores de la
   tabla y los de la señal generada.
   
-  Para obtener el valor de la señal entre dos posiciones de la tabla usamos interpolación lineal. Tomamos el índice real (decimal), calculamos el índice inferior `index_floor` y el siguiente `next_index = index_floor + 1`. Con un peso `weight` (la parte decimal) mezclamos ambos valores para aproximar el punto intermedio y suavizar la forma de onda.
+  Para obtener los valores de la señal se ha usado una interpolación lineal. Primero, obtenemos el entero más cercano a la baja index_floor. Haciendo esto en vez de un round, nos podemos asegurar que siempre estaremos en el mismo caso (el valor almacenado en index_floor será la primera posición entre las que interpolar) y así obtener next_index sumándole 1. La ponderación para los valores con cada uno de los índices se hace con weight, variable que es la diferencia entre el índice real y el entero inferior más próximo, y, a su vez, contiene la información de "cómo de cerca" están cada una de las dos posiciones, lo cual nos sirve para darle más o menos peso.
 
 ![Valores de tabla vs señal interpolada](img/seno_graph2.png)
 
@@ -400,11 +400,13 @@ deberá venir expresado en semitonos.
 
 Para esta parte hemos implementado un instrumento de síntesis FM siguiendo el esquema de Chowning. Usamos como parámetros básicos los números `N1` y `N2` (relación entre portadora y moduladora) y el índice de modulación `I`. Partimos de la expresión:
 
-![eq_fm](img/eq_fm.png)
+<img src="img/eq_fm.png" width="450">
+
 
 donde la señal se construye como una sinusoide cuya fase se modula con otra sinusoide. Para relacionar la frecuencia de cada nota con la moduladora usamos:
 
-![eq_fm2](img/eq_fm2.png)
+<img src="img/eq_fm2.png" width="150">
+
 
 donde `fc` es la frecuencia de la nota y `fm` la frecuencia moduladora (quedan ligadas por el cociente `N1/N2`).
 
@@ -450,11 +452,11 @@ for (unsigned int i = 0; i < x.size(); ++i)
 
 Usando parámetros similares a los del vibrato, se observa que con `fm` baja los armónicos generados por la FM ganan bastante peso. En el siguiente ejemplo, con `I` alto, la energía se reparte en bandas laterales y la fundamental pierde protagonismo:
 
-![fm_freq_graph1](img/fm_freq_graph1.png)
+![fm_vibrato_graph](img/fm_vibrato_graph.png)
 
 A medida que aumentamos `I` (en lineal), incluso modificando `N1` y `N2` para obtener `fm` distintas, los armónicos siguen ganando peso frente a la fundamental:
 
-![vibrato_freq_graph3](img/vibrato_freq_graph3.png)
+![fm_freq_graph1](img/fm_freq_graph1.png)
 
 De hecho, `N1` y `N2` se pueden estimar mirando la separación entre picos: esa separación corresponde a `fm`, y la relación con `fc` viene dada por `fc = fm * N1/N2`.
 
@@ -515,6 +517,13 @@ Use el programa `synth` para generar canciones a partir de su partitura MIDI. Co
 - Indique, a continuación, la orden necesaria para generar la señal (suponiendo que todos los archivos
   necesarios están en directorio indicado).
 
+  Los comandos para generar tanto el fichero `score` como el `.wav` son:
+
+```bash
+midi2sco --bpm 116 work/music/ToyStory_A_Friend_in_me.mid work/music/ToyStory_A_Friend_in_me.sco
+synth work/music/friend_in_me.orc work/music/ToyStory_A_Friend_in_me.sco work/music/ToyStory_A_Friend_in_me.wav
+```
+
 También puede orquestar otros temas más complejos, como la banda sonora de *Hawaii5-0* o el villacinco de
 John Lennon *Happy Xmas (War Is Over)* (fichero `The_Christmas_Song_Lennon.sco`), o cualquier otra canción
 de su agrado o composición. Se valorará la riqueza instrumental, su modelado y el resultado final.
@@ -522,8 +531,20 @@ de su agrado o composición. Se valorará la riqueza instrumental, su modelado y
   `work/music`.
 - Indique, a continuación, la orden necesaria para generar cada una de las señales usando los distintos
   ficheros.
+Además, hemos orquestado otros temas:
 
-> NOTA:
->
-> No olvide escuchar el resultado generado y comprobar que no se producen ruidos extraños o distorsiones.
-> Sobre todo, tenga en cuenta la salud auditiva de quien será encargado de corregir su trabajo.
+- Banda sonora de *Hawaii5-0* usando exclusivamente síntesis por tabla:
+
+```bash
+midi2sco --bpm 122 work/music/Hawaii5-0.mid work/music/Hawaii5-0.sco
+synth work/music/hawaii50.orc work/music/Hawaii5-0.sco work/music/Hawaii5-0.wav
+```
+
+- Canción *ANiMA* (de Xi) usando prácticamente solo instrumentos FM:
+
+```bash
+midi2sco --bpm 123 work/music/ANiMA.mid work/music/ANiMA.sco
+synth work/music/anima.orc work/music/ANiMA.sco work/music/ANiMA.wav
+```
+
+Ambas se encuentran en `work/music`. Los instrumentos usados para cada canción están definidos en sus respectivos ficheros `.orc` (y, cuando aplica, también se usan los ficheros de `effects`).
