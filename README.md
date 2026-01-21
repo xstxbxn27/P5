@@ -208,7 +208,7 @@ const vector<float> &Seno::synthesize()
 
   return x;
 }
-
+```
 
   
 - Explique qué método se ha seguido para asignar un valor a la señal a partir de los contenidos en la tabla,
