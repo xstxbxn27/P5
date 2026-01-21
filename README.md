@@ -210,10 +210,47 @@ const vector<float> &Seno::synthesize()
 }
 ```
 
+Para generar la señal a partir de la tabla, recorremos sus valores con un índice que avanza según la frecuencia. Como ese índice suele caer entre dos posiciones, aplicamos interpolación lineal para estimar el valor intermedio y evitar “escalones” en la forma de onda.
+
+Al llegar al final de la tabla probamos dos formas de gestionar el índice. Si lo forzamos a 0, aparece una pequeña discontinuidad porque el valor 0 no coincide con la fase real de la sinusoide (se nota como un salto). La opción que mejor resultado nos da es “envolver” el índice y volver al valor equivalente dentro de la tabla (índice actual − N), manteniendo la continuidad de fase.
+
+![Seno zoom](img/seno_graph1.png)
+
+Figura: comparación del seno con y sin interpolación y con distintas formas de resetear el índice.
+
+Las grabaciones de estos tres casos se han guardado en `work/ejemplos/`:
+`seno_with_index_correction.wav`, `seno_without_index_correction.wav` y `seno_without_interp.wav`.
+
   
 - Explique qué método se ha seguido para asignar un valor a la señal a partir de los contenidos en la tabla,
   e incluya una gráfica en la que se vean claramente (use pelotitas en lugar de líneas) los valores de la
   tabla y los de la señal generada.
+  
+  Para obtener el valor de la señal entre dos posiciones de la tabla usamos interpolación lineal. Tomamos el índice real (decimal), calculamos el índice inferior `index_floor` y el siguiente `next_index = index_floor + 1`. Con un peso `weight` (la parte decimal) mezclamos ambos valores para aproximar el punto intermedio y suavizar la forma de onda.
+
+![Valores de tabla vs señal interpolada](img/seno_graph2.png)
+
+Figura: valores discretos de la tabla (puntos) y valor interpolado de la señal.
+
+Si la tabla se lee desde un fichero externo, el método `command()` que gestiona la carga/selección de la tabla es el siguiente:
+
+```cpp
+void PercussionSample::command(long cmd, long note, long vel)
+{
+  if (cmd == 9)
+  { //'Key' pressed: attack begins
+   bActive = true;
+   index = 0;
+    total_samples_played = 0;
+   gotInterrupted = false; //reset status for every new note. By default, it can't get interrupted (interrupt==0)
+    interrupted_count = 0;  
+   if (vel > 127)
+     vel = 127;
+    A = vel / 127.;
+  }
+}
+```
+
 - Si ha implementado la síntesis por tabla almacenada en fichero externo, incluya a continuación el código
   del método `command()`.
 
