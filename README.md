@@ -317,6 +317,76 @@ El código para obtener las gráficas en tiempo y frecuencia está en `scripts/t
   el efecto, e indique, a continuación, la orden necesaria para generar los ficheros de audio usando el
   programa `synth`.
 
+El efecto que hemos implementado ha sido la distorsión. Consiste en saturar la salida por encima de un umbral (clipping), lo que genera una distorsión audible.
+
+Para implementarlo, como nuestras señales tienen amplitud variable (envolvente ADSR), hemos aplicado el clipping de forma local usando una ventana deslizante. En cada ventana calculamos el mínimo y el máximo y recortamos la señal respecto a un umbral definido como porcentaje de esa amplitud. Así el efecto se adapta mejor a los cambios de volumen de la propia señal.
+
+Los parámetros de entrada se leen desde el fichero `effects`: `t` (porcentaje de amplitud a partir del cual se recorta) y `tm` (duración de la ventana en segundos). Con frecuencias altas se obtienen resultados más estables porque es más fácil asegurar que el máximo de la sinusoide cae dentro de la ventana. Además, con valores de `tm` pequeños se consigue un clipping más suave, que se percibe más como una reducción de volumen que como un recorte agresivo.
+
+Código del efecto:
+
+ ```cpp
+	  void Distortion::operator()(std::vector<float> &x)
+  	{
+    float max, min;
+    int window_count = 0;
+
+    for (unsigned int i = 0; i < x.size(); i++)
+    {
+
+  	//update maximum and minimum clipping value
+  	if (window_count == 0)
+  	{
+  	  max = 0;
+  	  min = 0;
+
+  	  for (unsigned int j = i; j < i + tm; j++)
+  	  {
+  		//quit search if the end of x has been reached
+  		if (j > x.size())
+  		{
+  		  break;
+  		}
+
+  		if (max < x[j])
+  		{
+  		  max = x[j];
+  		}
+  		if (min > x[j])
+  		{
+  		  min = x[j];
+  		}
+  	  }
+  	}
+  	//clip the signal if needed
+  	if (((max * t) < x[i]))
+  	{
+  	  x[i] = max * t;
+  	}
+  	if (((min * t) > x[i]))
+  	{
+  	  x[i] = min * t;
+  	}
+
+  	window_count++;
+  	if (window_count > tm)
+  	{
+  	  window_count = 0;
+  	}
+    }
+ ```
+
+![distortion_graph](img/distortion_graph.png)
+
+Figura: comparación de la señal original con clipping y soft-clipping; con tm pequeño el recorte es más suave y se nota menos agresivo.
+
+La orden para aplicar el efecto ha sido:
+
+    synth -e work/effects.orc work/percussion.orc work/doremi.sco distortion.wav
+
+Los parámetros del efecto en este ejemplo han sido un umbral `t=0.75` y una ventana `tm=0.01 s` para el clipping estándar y `tm=0.000001 s` para el soft-clipping. Las tres señales generadas se encuentran en `work/ejemplos/`.
+
+
 ### Síntesis FM.
 
 Construya un instrumento de síntesis FM, según las explicaciones contenidas en el enunciado y el artículo
