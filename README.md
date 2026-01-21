@@ -1,4 +1,4 @@
-
+PAV - P5: síntesis musical polifónica
 =====================================
 
 Obtenga su copia del repositorio de la práctica accediendo a [Práctica 5](https://github.com/albino-pav/P5) 
