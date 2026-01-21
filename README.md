@@ -1,4 +1,4 @@
-PAV - P5: síntesis musical polifónica
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/93d469aa-d9ad-4930-8be3-99fb0f28bbd5" />PAV - P5: síntesis musical polifónica
 =====================================
 
 Obtenga su copia del repositorio de la práctica accediendo a [Práctica 5](https://github.com/albino-pav/P5) 
@@ -48,7 +48,23 @@ En `InstrumentDumb` y `Seno` usamos la misma envolvente ADSR para dar forma a ca
 
 ![adsr_graph1](img/adsr_graph1.png)
 
-Figura: frecuencia instantánea en FM.
+Figura: seno con envolvente ADSR.
+
+### Instrumento percusivo
+
+El instrumento con estas características lo hemos implementado como `Percussion`. Luego lo hemos adaptado para que el sonido tenga el pitch de la nota que se toque (`PercussionPitch`) o, si se usan samples, para que se reproduzca el audio completo sin cambiar el pitch (`PercussionSample`).
+
+Su envolvente cuando el sonido termina sin ser interrumpido es la siguiente:
+
+![Percussion ADSR](img/adsr_graph2.png)
+
+Figura: envolvente percusiva sin interrupción.
+
+Si se interrumpe la nota (la tecla deja de estar pulsada), hacemos que el sonido caiga de forma exponencial a partir de ese instante. Ajustando la constante se consigue una caída más suave o más brusca.
+
+![Percussion ADSR interrumpida](img/adsr_graph3.png)
+
+Figura: caída al soltar la nota (interrupción).
 
 
 ### Instrumentos Dumb y Seno.
