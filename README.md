@@ -548,3 +548,8 @@ synth work/music/anima.orc work/music/ANiMA.sco work/music/ANiMA.wav
 ```
 
 Ambas se encuentran en `work/music`. Los instrumentos usados para cada canción están definidos en sus respectivos ficheros `.orc` (y, cuando aplica, también se usan los ficheros de `effects`).
+
+> NOTA:
+>
+> No olvide escuchar el resultado generado y comprobar que no se producen ruidos extraños o distorsiones.
+> Sobre todo, tenga en cuenta la salud auditiva de quien será encargado de corregir su trabajo.
