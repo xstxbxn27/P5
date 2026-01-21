@@ -232,6 +232,10 @@ Las grabaciones de estos tres casos se han guardado en `work/ejemplos/`:
 
 Figura: valores discretos de la tabla (puntos) y valor interpolado de la señal.
 
+
+- Si ha implementado la síntesis por tabla almacenada en fichero externo, incluya a continuación el código
+  del método `command()`.
+
 Si la tabla se lee desde un fichero externo, el método `command()` que gestiona la carga/selección de la tabla es el siguiente:
 
 ```cpp
@@ -251,15 +255,63 @@ void PercussionSample::command(long cmd, long note, long vel)
 }
 ```
 
-- Si ha implementado la síntesis por tabla almacenada en fichero externo, incluya a continuación el código
-  del método `command()`.
-
 ### Efectos sonoros.
 
 - Incluya dos gráficas en las que se vean, claramente, el efecto del trémolo y el vibrato sobre una señal
   sinusoidal. Deberá explicar detalladamente cómo se manifiestan los parámetros del efecto (frecuencia e
   índice de modulación) en la señal generada (se valorará que la explicación esté contenida en las propias
   gráficas, sin necesidad de *literatura*).
+
+  Para esta parte, hemos generado señales usando `doremi.sco` (quedándonos con la primera nota) y ajustando `Seno` para que el tramo de sustain sea el predominante y así se vea el efecto sin que la envolvente ADSR “moleste”.
+
+#### Trémolo
+
+El trémolo consiste en escalar la señal con una sinusoide de frecuencia `fm` y amplitud `A`. En la práctica se ve como una variación periódica del volumen: la sinusoide principal mantiene su tono, pero su amplitud sube y baja siguiendo una envolvente.
+
+En una señal simple (sinusoide), `fm` se puede estimar midiendo el periodo de la envolvente (tiempo entre máximos). El parámetro `A` se refleja en la profundidad del trémolo: cuanto mayor es, mayor diferencia hay entre los máximos y mínimos de la envolvente.
+
+![tremolo_graph](img/tremolo_graph.png)
+
+Figura: trémolo sobre una sinusoide. `fm` marca la velocidad de la envolvente y `A` la profundidad.
+
+Parámetros usados: Tremolo `A=0.5`, `fm=4`.
+
+El código para generar esta gráfica y estimar los parámetros está en `scripts/tremolo_graph.py`.
+
+#### Vibrato
+
+En el vibrato la amplitud se mantiene prácticamente constante, pero cambia la frecuencia instantánea. Para que se vea claro en las gráficas hemos usado una nota de 90 semitonos (`fc = 466.16 Hz`) y una frecuencia de modulación alta.
+
+Con valores bajos del índice `I` (vibrato suave) la FFT muestra un pico principal en `fc` y aparecen componentes pequeñas separadas por `fm` alrededor de la central. Es decir, `fm` decide la separación entre picos (dónde aparecen) y `I` controla cuánto “peso” ganan esas componentes.
+
+![vibrato_freq_graph1](img/vibrato_freq_graph1.png)
+
+Figura: FFT con vibrato suave (pico principal en `fc` y primeras componentes alrededor).
+
+Al aumentar `I`, aparecen más picos (múltiplos de `fm` respecto a `fc`) y ganan amplitud. En los siguientes ejemplos se ve cómo la energía se reparte más en esas componentes y el pico de la fundamental pierde protagonismo.
+
+![vibrato_freq_graph2](img/vibrato_freq_graph2.png)
+
+Figura: FFT con picos marcados. La separación es `fm` y la amplitud depende de `I`.
+
+![vibrato_freq_graph3](img/vibrato_freq_graph3.png)
+
+Figura: comparación en frecuencia para distintos valores de `I`.
+
+Si hacemos zoom alrededor de la fundamental, se aprecia mejor cómo disminuye su amplitud cuando `I` aumenta (la energía se reparte en las bandas laterales).
+
+![vibrato_freq_graph3_zoom](img/vibrato_freq_graph3_zoom.png)
+
+Figura: zoom en `fc` para ver la pérdida de peso de la fundamental al subir `I`.
+
+En el dominio temporal, el efecto de aumentar `I` se nota en que los ciclos dejan de estar “igual de separados”: la onda se comprime y se estira más, haciendo el vibrato más perceptible.
+
+![vibrato_time_graph1](img/vibrato_time_graph1.png)
+
+Figura: vibrato en el tiempo para distintos valores de `I`.
+
+El código para obtener las gráficas en tiempo y frecuencia está en `scripts/time_vibrato_graph.py` y `scripts/freq_vibrato_graph.py`, respectivamente.
+
 - Si ha generado algún efecto por su cuenta, explique en qué consiste, cómo lo ha implementado y qué
   resultado ha producido. Incluya, en el directorio `work/ejemplos`, los ficheros necesarios para apreciar
   el efecto, e indique, a continuación, la orden necesaria para generar los ficheros de audio usando el
