@@ -1,4 +1,4 @@
-<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/93d469aa-d9ad-4930-8be3-99fb0f28bbd5" />PAV - P5: síntesis musical polifónica
+
 =====================================
 
 Obtenga su copia del repositorio de la práctica accediendo a [Práctica 5](https://github.com/albino-pav/P5) 
@@ -66,6 +66,15 @@ Si se interrumpe la nota (la tecla deja de estar pulsada), hacemos que el sonido
 
 Figura: caída al soltar la nota (interrupción).
 
+### Instrumento plano
+
+Para el instrumento plano hemos creado la clase `Strings`. La idea es tener una nota más estable: un ataque suave, un sustain largo y un release que se apaga de forma progresiva.
+
+![Strings ADSR](img/adsr_graph4.png)
+
+Figura: envolvente tipo “plana” para `Strings`.
+
+Esta clase, igual que `PercussionPitch`, también se ha adaptado para poder tocar las notas correspondientes (cambiando el pitch según la nota).
 
 ### Instrumentos Dumb y Seno.
 
