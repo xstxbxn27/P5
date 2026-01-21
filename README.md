@@ -396,6 +396,105 @@ deberá venir expresado en semitonos.
 
 - Use el instrumento para generar un vibrato de *parámetros razonables* e incluya una gráfica en la que se
   vea, claramente, la correspondencia entre los valores `N1`, `N2` e `I` con la señal obtenida.
+
+
+Para esta parte hemos implementado un instrumento de síntesis FM siguiendo el esquema de Chowning. Usamos como parámetros básicos los números `N1` y `N2` (relación entre portadora y moduladora) y el índice de modulación `I`. Partimos de la expresión:
+
+![eq_fm](img/eq_fm.png)
+
+donde la señal se construye como una sinusoide cuya fase se modula con otra sinusoide. Para relacionar la frecuencia de cada nota con la moduladora usamos:
+
+![eq_fm2](img/eq_fm2.png)
+
+donde `fc` es la frecuencia de la nota y `fm` la frecuencia moduladora (quedan ligadas por el cociente `N1/N2`).
+
+De cara a la implementación, lo hemos hecho en dos pasos:
+1. Ajustamos la frecuencia al tono de la nota correspondiente (igual que en `Seno`).
+2. Recorremos el vector generado con saltos de índice y aplicamos la modulación de fase con un incremento fijo de `2*pi*fm/SamplingRate`. Como la tabla no tiene por qué contener exactamente un periodo de la nota, usamos una variable de periodo (`x_tm`) para mantener el índice dentro de rango.
+```cpp
+//modulate the signal
+for (unsigned int i = 0; i < x.size(); ++i)
+{
+  //check if the floating point index is out of bounds
+  if (index_sen < 0)
+  {
+    index_sen = Nnote + index_sen;
+  }
+  if ((int)floor(index_sen) > note_int - 1)
+  {
+
+    index_sen = index_sen - (note_int - 1);
+  }
+  //Obtain the index as an integer
+  index_floor_fm = floor(index_sen);
+  weight_fm = index_sen - index_floor_fm;
+
+  //fix interpolation indexes if needed
+  if (index_floor_fm == note_int - 1)
+  {
+    next_index_fm = 0;
+    index_floor_fm = note_int - 1;
+  }
+  else
+  {
+    next_index_fm = index_floor_fm + 1;
+  }
+  //interpolate table values
+  x[i] = A * ((1 - weight_fm) * x_tm[index_floor_fm] + weight_fm * (x_tm[next_index_fm]));
+
+  //update real index (phase) and modulated phase
+  index_sen = index_sen + 1 - I_array[i] * sin(mod_phase);
+  mod_phase = mod_phase + mod_phase_step;
+}
+```
+
+Usando parámetros similares a los del vibrato, se observa que con `fm` baja los armónicos generados por la FM ganan bastante peso. En el siguiente ejemplo, con `I` alto, la energía se reparte en bandas laterales y la fundamental pierde protagonismo:
+
+![fm_freq_graph1](img/fm_freq_graph1.png)
+
+A medida que aumentamos `I` (en lineal), incluso modificando `N1` y `N2` para obtener `fm` distintas, los armónicos siguen ganando peso frente a la fundamental:
+
+![vibrato_freq_graph3](img/vibrato_freq_graph3.png)
+
+De hecho, `N1` y `N2` se pueden estimar mirando la separación entre picos: esa separación corresponde a `fm`, y la relación con `fc` viene dada por `fc = fm * N1/N2`.
+
+En el dominio temporal, con parámetros más exagerados el efecto se nota más que en el vibrato: la forma de onda deja de ser “regular” y aparecen variaciones claras por la modulación:
+
+![fm_time_graph1](img/fm_time_graph1.png)
+
+Tras implementar el esquema básico, hemos seguido la configuración propuesta por Chowning, donde el índice de modulación puede variar en el tiempo usando una envolvente tipo ADSR:
+
+![chowning_blocks1](img/chowning_blocks1.png)
+
+Para poder generar diferentes tipos de instrumentos hemos añadido la opción de envolvente exponencial (útil para percusión). Además, la envolvente del índice de modulación puede escogerse de manera independiente a la ADSR que controla la amplitud.
+
+Para escoger el tipo de envolvente hemos usado la variable `setting`:
+- `setting = 0`: envolvente estándar
+- `setting = -1`: envolvente instrumento plano (cuerda)
+- `setting = decay_constant` con `0 < decay_constant < 1`: envolvente exponencial (percusión), donde la constante controla la caída
+
+El código para incorporar los nuevos bloques es:
+```cpp
+//fill array with the user-input I value (constant)
+for (unsigned int i = 0; i < x.size(); i++)
+{
+I_array[i] = (I2 - I1);
+//apply exponential envelope if selected
+if (setting > 0)
+  I_array[i] = I_array[i] * pow(setting, decay_count_I);
+}
+
+//apply time-varying function to the array
+if (setting <= 0)
+adsr2(I_array);
+
+for (unsigned int i = 0; i < x.size(); i++)
+{
+I_array[i] = I1 + I_array[i];
+}
+```
+Los archivos pedidos se encuentran en el directorio indicado.
+
 - Use el instrumento para generar un sonido tipo clarinete y otro tipo campana. Tome los parámetros del
   sonido (N1, N2 e I) y de la envolvente ADSR del citado artículo. Con estos sonidos, genere sendas escalas
   diatónicas (fichero `doremi.sco`) y ponga el resultado en los ficheros `work/doremi/clarinete.wav` y
